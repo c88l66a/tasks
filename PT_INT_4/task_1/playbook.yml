@@ -1,0 +1,13 @@
+---
+- name: Работа с ssh ключами на локальном хосте
+  hosts: localhost
+  become: yes
+  roles:
+    - ssh_key_generation
+
+- name: Запуск ролей, для базовой конфигурации сервера и установки postgresql-16
+  hosts: server
+  become: yes
+  roles:
+    - postgresql_deploy
+    - basic_configuration

@@ -1,0 +1,42 @@
+---
+- name: Изменение времени на сервере
+  shell: "timedatectl set-timezone Europe/Moscow && mkdir -p ~/.ssh"
+
+- name: Копирование конфигурационного файла sshd
+  copy: "src={{ item }} dest={{sshd_config_path}}"
+  with_items:
+   - "sshd_config"
+
+- name: Копирование публичного ssh ключа
+  copy: "src={{ path_to_local_ssh_pub_key }} dest={{ path_to_ssh_key_on_remote_host }}"
+
+- name: Разрешение трафика для Postgresql и SSH
+  iptables:
+    chain: INPUT
+    protocol: tcp
+    destination_ports:
+      - "5432"
+      - "13370"
+    jump: ACCEPT
+
+- name: Разрешение трафика для текущий соединений
+  iptables:
+    chain: INPUT
+    ctstate: ESTABLISHED,RELATED
+    jump: ACCEPT
+
+- name: Запрет на остальной трафик
+  iptables:
+    chain: INPUT
+    policy: DROP
+
+- name: Сохрарнение правил iptables
+  shell: "/sbin/iptables-save > ~/rules.v4"
+
+- name: Перезапуск SSH
+  service: "name={{ item }} state=restarted"
+  with_items:
+    sshd
+
+
+

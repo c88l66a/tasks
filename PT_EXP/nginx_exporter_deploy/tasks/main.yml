@@ -1,0 +1,28 @@
+---
+- name: Скачивание Nginx exporter
+  get_url:
+    url: https://github.com/nginx/nginx-prometheus-exporter/releases/download/v1.4.1/nginx-prometheus-exporter_1.4.1_linux_amd64.tar.gz
+    dest: /tmp
+    mode: 755
+
+- name: Разархивирование tar
+  shell: "cd /tmp && tar xvf nginx-prometheus-exporter_1.4.1_linux_amd64.tar.gz && mv nginx-prometheus-exporter /usr/bin/nginx_exporter"
+
+- name: Создание пользователя nginx_exporter
+  shell: "useradd -rs /bin/false nginx_exporter"
+
+- name: Настройка прав
+  shell: "chown nginx_exporter:nginx_exporter /usr/bin/nginx_exporter"
+
+- name: Копирование конфига, для запуска Nginx exporter как службы
+  copy: "src={{ item }} dest={{ systemd_path }}/nginx_exporter.service"
+  with_items:
+    - nginx_exporter.service
+
+- name: Запуск службы
+  shell: |
+    systemctl daemon-reload &&
+    systemctl start nginx_exporter &&
+    systemctl enable nginx_exporter
+
+

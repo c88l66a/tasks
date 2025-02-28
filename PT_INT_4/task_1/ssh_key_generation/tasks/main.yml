@@ -1,0 +1,8 @@
+---
+- name: Проверка, есть ли вообще приватный ssh ключ, на хосте с которого запускается ansible
+  stat: "path={{ path_to_local_ssh_priv_key }}"
+  register: key_status
+
+- name: Создание пары ключей, если до этого они были не созданы
+  shell: "ssh-keygen -t rsa"
+  when: not key_status.stat.exists

@@ -1,0 +1,3 @@
+---
+# vars file for postgresql_deploy
+path_to_psql_conf: /etc/postgresql/16/main/postgresql.conf

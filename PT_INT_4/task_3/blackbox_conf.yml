@@ -1,0 +1,6 @@
+modules:
+  http_test:
+    prober: http
+    http:
+      valid_status_codes: [200,301,404]
+      method: GET

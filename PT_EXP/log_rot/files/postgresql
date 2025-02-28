@@ -1,0 +1,7 @@
+/root/docker_app/pglog/*.log {
+    weekly
+    rotate 2
+    compress
+    delaycompress
+    missingok
+}

@@ -1,0 +1,30 @@
+services:
+  master:
+    build: ./DB/.
+    container_name: ps1
+    environment:
+      PGDATA: /var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    networks:
+      - db-net
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data/
+
+  slave:
+    build: ./DB_repl/.
+    container_name: ps2
+    ports:
+      - "5433:5432"
+    networks:
+      - db-net
+  bot:
+    build: ./TG_bot/.
+    container_name: bot
+    networks:
+      - db-net
+    volumes:
+      - ./pgdata:/logs
+
+networks:
+  db-net:

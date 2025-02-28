@@ -1,0 +1,39 @@
+---
+- name: Скачивание prometheus
+  get_url:
+    url: https://github.com/prometheus/prometheus/releases/download/v2.51.1/prometheus-2.51.1.linux-amd64.tar.gz
+    dest: /tmp
+    mode: 755
+
+- name: Разархивирование tar
+  shell: "cd /tmp && tar xvf prometheus-2.51.1.linux-amd64.tar.gz && cd prometheus-2.51.1.linux-amd64 && mv prometheus /usr/bin/"
+
+- name: Создание каталогов под TSDB и .conf
+  shell: |
+    mkdir -p {{ prometheus_conf_path }} &&
+    mkdir -p {{ prometheus_data_path }}
+
+- name: Копирование конфига prometheus
+  copy: "src={{ item }} dest={{ prometheus_conf_path }}/prometheus.yml"
+  with_items:
+    - prometheus.yml
+
+- name: Создание пользователя prometheus
+  shell: "useradd -rs /bin/false prometheus"
+
+- name: Настройка прав
+  shell: |
+    chown prometheus:prometheus /usr/bin/prometheus &&
+    chown prometheus:prometheus -R {{ prometheus_conf_path }} &&
+    chown prometheus:prometheus -R {{ prometheus_data_path }}
+
+- name: Копирование конфига, для запуска prometheus как службы
+  copy: "src={{ item }} dest={{ systemd_path }}/prometheus.service"
+  with_items:
+    - prometheus.service
+
+- name: Запуск службы
+  shell: |
+    systemctl daemon-reload &&
+    systemctl start prometheus &&
+    systemctl enable prometheus

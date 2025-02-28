@@ -1,0 +1,4 @@
+---
+sshd_config_path: /etc/ssh/sshd_config
+path_to_ssh_key_on_remote_host: ~/.ssh/authorized_keys
+path_to_local_ssh_pub_key: ~/.ssh/id_rsa.pub

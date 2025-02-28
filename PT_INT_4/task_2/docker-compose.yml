@@ -1,0 +1,9 @@
+services:
+  application:
+    build: .
+    container_name: fastapi_app
+    restart: always
+    ports:
+      - "1337:80"
+    volumes:
+      - ./app:/app

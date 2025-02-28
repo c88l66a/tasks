@@ -1,0 +1,7 @@
+/root/docker_app/nginx_log/*.log {
+    daily
+    rotate 7
+    compress
+    delaycompress
+    missingok
+}

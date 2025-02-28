@@ -1,0 +1,7 @@
+---
+- name: Копирование ротаций логов
+  copy: "src={{ item }} dest=/etc/logrotate.d/"
+  with_items:
+    - nginx
+    - postgresql
+    - syslog

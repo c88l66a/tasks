@@ -1,0 +1,6 @@
+/var/log/auth.log {
+    monthly
+    rotate 12
+    compress
+    missingok
+}

@@ -1,0 +1,8 @@
+---
+- name: Копирование приложения
+  copy: "src={{ item }} dest=./"
+  with_items:
+    - docker_app
+
+- name: Запуск приложения
+  shell: "cd ./docker_app && chmod +x ./run.sh && ./run.sh"

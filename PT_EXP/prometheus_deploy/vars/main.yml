@@ -1,0 +1,5 @@
+---
+prometheus_conf_path: /etc/prometheus
+prometheus_data_path: /var/lib/prometheus/data
+systemd_path: /etc/systemd/system
+

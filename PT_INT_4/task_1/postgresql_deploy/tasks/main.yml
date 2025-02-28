@@ -1,0 +1,33 @@
+---
+- name: Установка curl
+  apt: "name={{ item }} state=present"
+  with_items:
+    - curl
+    - gpg
+
+- name: Подготовка репозитория для установки postgresql-16
+  shell: 'echo "deb http://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+
+- name: Подготовка gpg ключа для postgresql-16 и обновление репозитория
+  shell: "curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg && apt update"
+
+- name: Установка postgresql-16
+  apt: "name={{ item }} state=present"
+  with_items:
+    - postgresql-16
+    - postgresql-contrib-16
+
+- name: Остановка postgresql
+  service: "name={{ item }} state=stopped"
+  with_items:
+    - postgresql
+
+- name: Копирование конфигурационного файла postgresql
+  copy: "src={{ item }} dest={{ path_to_psql_conf }}"
+  with_items:
+   - postgresql.conf
+
+- name: Запуск postgresql
+  service: "name={{ item }} state=started"
+  with_items:
+    - postgresql

@@ -1,0 +1,147 @@
+---
+- name: Хост - VM1
+  hosts: vm1
+  become: yes
+  vars:    
+    db_name: "email_and_phone"
+    db_user: "admin"
+    db_password: "qwe"
+
+  tasks:
+    - name: Установка python3-psycopg2
+      apt: "name={{ item }} state=present"
+      with_items:
+        - python3-psycopg2
+
+    - name: Установка Postgresql
+      apt: "name={{ item }} state=present"
+      with_items:
+        - postgresql
+        - postgresql-contrib
+
+    - name: Остановка службы Postgresql
+      service: "name={{ item }} state=stopped"
+      with_items:
+        - postgresql
+
+    - name: Копирование pg_hba.conf
+      copy: "src={{ item }} dest=/etc/postgresql/15/main/ mode=0700"
+      with_items:
+        - ./pg_hba.conf
+
+    - name: Копирование postgresql.conf
+      copy: "src={{ item }} dest=/etc/postgresql/15/main/ mode=0700"
+      with_items:
+        - ./postgresql.conf
+
+    - name: Запуск службы Postgresql
+      service: "name={{ item }} state=started"
+      with_items:
+        - postgresql
+
+    - name: Создание базы данных
+      postgresql_db: "state=present name={{ db_name }}"
+      become: yes
+      become_user: postgres
+
+    - name: Создание пользователя
+      postgresql_user: "state=present name={{ db_user }} password={{ db_password }}"
+      become: yes
+      become_user: postgres
+
+    - name: Создание таблиц и пользователя для репликации 
+      become: yes
+      become_user: postgres
+      postgresql_query:
+        db: "{{ db_name }}"
+        query: |
+          CREATE TABLE IF NOT EXISTS emails (
+              id SERIAL PRIMARY KEY,
+              email VARCHAR(255) NOT NULL
+          );
+
+          CREATE TABLE IF NOT EXISTS phones (
+              id SERIAL PRIMARY KEY,
+              phone_number VARCHAR(20) NOT NULL
+          );
+
+          INSERT INTO emails (email) VALUES
+          ('test@example.com'),
+          ('user@example.com');
+
+          INSERT INTO phones (phone_number) VALUES
+          ('+7234567890'),
+          ('+8 876 54 32 10');
+
+          GRANT ALL PRIVILEGES ON TABLE emails TO admin;
+          GRANT ALL PRIVILEGES ON TABLE emails_id_seq TO admin;
+          GRANT ALL PRIVILEGES ON TABLE phones TO admin;
+          GRANT ALL PRIVILEGES ON TABLE phones_id_seq TO admin;
+
+          DO $$
+          BEGIN
+              IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'repl_user') THEN
+                  CREATE ROLE repl_user WITH REPLICATION LOGIN PASSWORD 'qwe';
+              END IF;
+          END
+          $$;
+
+
+- name: Хост - VM2
+  hosts: vm2
+  become: yes
+  tasks:
+    - name: Установка Postgresql
+      apt: "name={{ item }} state=present"
+      with_items:
+        - postgresql
+        - postgresql-contrib
+
+    - name: Остановка службы Postgresql
+      service: "name={{ item }} state=stopped"
+      with_items:
+        - postgresql
+      
+    - name: Запуск репликации
+      shell: "rm -rf /var/lib/postgresql/15/main/* && PGPASSWORD='qwe' pg_basebackup -R -h 192.168.0.10 -U repl_user -D /var/lib/postgresql/15/main -P && \
+      chown postgres:postgres -R /var/lib/postgresql/15/ && chmod -R 700 /var/lib/postgresql/15/"
+
+    - name: Запуск службы Postgresql
+      service: "name={{ item }} state=started"
+      with_items:
+        - postgresql
+
+
+- name: Хост - VM3
+  hosts: vm3
+  become: yes
+  vars:
+    venv_path: "/home/ansible/vnv"
+
+  tasks:
+    - name: Скачивание бота из репозитория
+      git:
+        repo: ''
+        dest: '/home/ansible/bot'
+        version: 'master'
+
+    - name: Проверка на наличие виртуального окружения 
+      stat: "path={{ venv_path }}/bin/activate"
+      register: venv_status
+
+    - name: Создание виртуального окружения, если его нет
+      command: "python3 -m venv {{ venv_path }}" 
+      when: not venv_status.stat.exists
+
+    - name: Копирование .env для корректной работы бота
+      copy: "src={{ item }} dest=./bot"
+      with_items:
+        - ./.env
+
+    - name: Установка зависимосетй для бота из requirements.txt
+      pip: "requirements=/home/ansible/bot/requirements.txt virtualenv={{ venv_path }}"
+
+    - name: Запуск бота
+      shell: "cd ./bot && {{ venv_path }}/bin/python3 /home/ansible/bot/run_bot.py &"
+        
+

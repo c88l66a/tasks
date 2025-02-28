@@ -1,0 +1,13 @@
+[Unit]
+Description=Prometheus Nginx Exporter
+After=network.target
+
+[Service]
+User=nginx_exporter
+Group=nginx_exporter
+Type=simple
+Restart=on-failure
+ExecStart=/usr/bin/nginx_exporter -nginx.scrape-uri=http://192.168.0.149/status
+
+[Install]
+WantedBy=multi-user.target

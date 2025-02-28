@@ -1,0 +1,10 @@
+---
+- name: Копирование скрипта, для запуска grafana
+  copy: "src={{ item }} dest=./ mode=755"
+  with_items:
+    - grafana_run.sh
+
+- name: Запуск скрипта
+  shell: "./grafana_run.sh"
+
+

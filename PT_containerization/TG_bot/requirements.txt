@@ -1,0 +1,5 @@
+aiogram==2.17
+python-dotenv
+psycopg2-binary
+paramiko
+
